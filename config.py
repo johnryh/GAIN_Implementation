@@ -1,57 +1,48 @@
-import argparse
 
-# config phase
+class_table = {'aeroplane': 0,
+               'bicycle': 1,
+               'bird': 2,
+               'boat': 3,
+               'bottle': 4,
+               'bus': 5,
+               'car': 6,
+               'cat': 7,
+               'chair': 8,
+               'cow': 9,
+               'diningtable': 10,
+               'dog': 11,
+               'horse': 12,
+               'motorbike': 13,
+               'person': 14,
+               'pottedplant': 15,
+               'sheep': 16,
+               'sofa': 17,
+               'train': 18,
+               'tvmonitor': 19}
 
-parser = argparse.ArgumentParser('')
-parser.add_argument('--GPU', dest='num_gpus', required=True)
-parser.add_argument('--phase', dest='phase', required=True)
-parser.add_argument('--smooth', dest='use_smooth', required=True)
-parser.add_argument('--size', dest='size', required=True)
-parser.add_argument('--epoch', dest='epoch_num', required=True)
-parser.add_argument('--batch_size', dest='batch_size', required=True)
-parser.add_argument('--lr', dest='lr', required=True)
-parser.add_argument('--n_critic', dest='n_critic', required=True)
-parser.add_argument('--use_embedding', dest='use_embedding', required=True)
-print('config')
 controller = 'CPU'
 
-args = parser.parse_args()
-num_gpus = int(args.num_gpus)
-phase = int(args.phase)
-use_smooth = int(args.use_smooth)
-size = int(args.size)
-epoch_num = int(args.epoch_num)
-batch_size = int(args.batch_size)
-lr = float(args.lr)
-n_critic = int(args.n_critic)
-use_embedding = int(args.use_embedding)
+num_gpus = 1
+epoch_num = 35
+batch_size = 4
 
-loading_img_h = int(1024/size)
-loading_img_w = loading_img_h
-print('loading:',[loading_img_h, loading_img_h])
+num_class = 20
+train_img_h = 512
+train_img_w = 512
 
-output_img_h = int(8 * 2 ** (phase - 1))
-output_img_w = output_img_h
+lr_rate = 0.001
+am_loss_weight = 10
 
-print('output:',[output_img_h, output_img_w])
-
-data_folder = '/data'
-
-# model parameters
-embedding_size = 48 if use_embedding else 0
-embedding_latent_0_size = 256
-embedding_latent_1_size = 128
-
-latent_size = 512 - embedding_size
-g_max_num_features = 512
-d_max_num_features = 512
-g_ln_rate = lr
-d_ln_rate = lr
-e_drift = 0.0001
 FLIP_RATE = 0.5
 
-conv2d_transpose_use_pn = True
-to_rgb_activation = 'linear'
-exp_name = 'face_mask_no_embedding_final'
+per_gpu_size = int(batch_size/num_gpus)
 
-total_samples = 7e4
+data_folder = r'C:\projects_yinhao\data\VOC2012\JPEGImages'
+
+exp_name = 'GAIN_classificaiton_only'
+feature_extractor_scope = 'resnet_v1_50'
+feature_extractor_ckpt_path = r'C:\projects_yinhao\src\GAIN\resnet_50_v1_model\resnet_v1_50.ckpt'
+print('loading:',[train_img_h, train_img_w])
+print('num_class: {}'.format(num_class))
+
+total_samples = 5717# VOC total sample size

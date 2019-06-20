@@ -1,1 +1,4 @@
 /.idea/
+/__pycache__/
+/resnet_50_v1_model/
+/runs/
