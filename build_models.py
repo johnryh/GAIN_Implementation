@@ -61,9 +61,9 @@ class GAIN():
     def __init__(self, img_batch, label_batch):
         self.img_batch = img_batch
         self.label_batch = label_batch
-        self.ln_rate = tf.placeholder(dtype=tf.float32, shape=(), name='learning_rate')
+        #self.ln_rate = tf.placeholder(dtype=tf.float32, shape=(), name='learning_rate')
 
-        self.optimizer = initialize_optimizer('Classifier', self.ln_rate)
+        self.optimizer = initialize_optimizer('Optimizer', lr_rate)
         print('Solver Configured')
 
         self.build_model()
@@ -76,14 +76,13 @@ class GAIN():
         tower_cls_loss = []; tower_grads = []
         tower_score = []; tower_accuracy = []; tower_auc = []; tower_CAM = []; tower_logits = []; tower_am_loss = []
         for gpu_id in range(num_gpus):
-            print('gpu')
             with tf.device(tf.DeviceSpec(device_type="GPU", device_index=gpu_id)):
                 with tf.variable_scope('GAIN'):
                     with slim.arg_scope(resnet_arg_scope()):
                         logits, end_features = resnet_v1_50(inputs=img_split[0], num_classes=num_class, is_training=True, scope=feature_extractor_scope, reuse=tf.AUTO_REUSE)
                         tower_logits.append(logits)
 
-                    with tf.variable_scope('Classification_Loss'):
+                    with tf.variable_scope('Loss/Classification_Loss'):
                         tower_cls_loss.append(tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=label_split[gpu_id], logits=logits)))
 
                     with tf.variable_scope('CAM'):
@@ -117,18 +116,19 @@ class GAIN():
                     with slim.arg_scope(resnet_arg_scope()):
                         attention_mining_logits, _ = resnet_v1_50(inputs=masked_image, num_classes=num_class, is_training=True, scope=feature_extractor_scope, reuse=tf.AUTO_REUSE)
 
-                        with tf.variable_scope('Attention_Mining_Loss'):
-                            tower_am_loss.append(am_loss_weight * tf.nn.sigmoid(attention_mining_logits)/num_class)
-                            tower_grads.append(self.optimizer.compute_gradients(tower_cls_loss[-1] + tower_am_loss[-1], var_list=get_trainable_weights()))
+                    with tf.variable_scope('Loss/Attention_Mining_Loss'):
+                        tower_am_loss.append(am_loss_weight * tf.reduce_sum(tf.nn.sigmoid(attention_mining_logits)/num_class))
+                    with tf.variable_scope('Loss'):
+                        total_loss = tower_cls_loss[-1] + tower_am_loss[-1]
+                        tower_grads.append(self.optimizer.compute_gradients(total_loss, var_list=get_trainable_weights()))
 
         with tf.variable_scope('Savers'):
             self.saver = tf.train.Saver(name='Saver', max_to_keep=None)
             self.loader = tf.train.Saver(name='FE_Loader', var_list=get_var_dict_by_scope(feature_extractor_scope))
 
-        with tf.variable_scope('Solver'):
-            with tf.variable_scope('Apply_Optim_Gradients'), tf.device("/device:{}:1".format(controller)):
-                self.grads = average_gradients(tower_grads)
-                self.apply_grads = self.optimizer.apply_gradients(self.grads, name='Apply_Grads')
+        with tf.variable_scope('Apply_Optim_Gradients'), tf.device("/device:{}:1".format(controller)):
+            self.grads = average_gradients(tower_grads)
+            self.apply_grads = self.optimizer.apply_gradients(self.grads, name='Apply_Grads')
 
         with tf.variable_scope('Reporting'):
             self.cls_loss = tf.reduce_mean(tower_cls_loss)
@@ -140,7 +140,3 @@ class GAIN():
             tf.summary.scalar('cls_loss loss', self.cls_loss)
             tf.summary.scalar('am_loss loss', self.am_loss)
             tf.summary.scalar('total loss', self.total_loss)
-
-
-        self.grads = average_gradients(tower_grads)
-        self.apply_grad = self.optimizer.apply_gradients(self.grads, name='Apply_Grads')

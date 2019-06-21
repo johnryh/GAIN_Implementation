@@ -23,11 +23,14 @@ if __name__ == '__main__':
     train_img_path_list, train_label_list = convert_label_dict_to_lists(train_label_dict)
     val_img_path_list, val_label_list = convert_label_dict_to_lists(val_label_dict)
 
-    img_batch, label_batch = build_input_pipline(batch_size, train_img_path_list, train_label_list)
-    val_img_batch, val_label_batch = build_input_pipline(batch_size, val_img_path_list, val_label_list)
+    with tf.variable_scope('training_input'):
+        img_batch, label_batch = build_input_pipline(batch_size, train_img_path_list, train_label_list)
+        img_batch = tf.reshape(img_batch, [per_gpu_size, train_img_h, train_img_w, 3])
+        label_batch = tf.reshape(label_batch, [per_gpu_size, num_class])
 
-    img_batch = tf.reshape(img_batch, [per_gpu_size, train_img_h, train_img_w, 3])
-    label_batch = tf.reshape(label_batch, [per_gpu_size, num_class])
+    with tf.variable_scope('testing_input'):
+        val_img_batch, val_label_batch = build_input_pipline(batch_size, val_img_path_list, val_label_list)
+
 
     model = GAIN(img_batch, label_batch)
 
@@ -59,7 +62,7 @@ if __name__ == '__main__':
             for iter in range(prev_phase_iter,int(epoch_num * total_samples / batch_size)):
                 iter_start_time = time.time()
 
-                _, summary = sess.run([model.apply_grads, merged], feed_dict={model.ln_rate:lr_rate})
+                _, summary = sess.run([model.apply_grads, merged])
                 iter_per_sec = 1/(time.time() - iter_start_time)
                 train_writer.add_summary(summary, iter)
 
@@ -70,7 +73,7 @@ if __name__ == '__main__':
                 if iter % 100 == 0:
                     val_img_batch_l, val_label_batch_l = sess.run([val_img_batch, val_label_batch])
 
-                    val_img_l, val_label_l, cam_l, predictions, val_summary = sess.run([model.img_batch, model.label_batch, model.CAM, model.logits, merged], feed_dict={model.img_batch:val_img_batch_l, model.label_batch:val_label_batch_l,model.ln_rate: lr_rate})
+                    val_img_l, val_label_l, cam_l, predictions, val_summary = sess.run([model.img_batch, model.label_batch, model.CAM, model.logits, merged], feed_dict={model.img_batch:val_img_batch_l, model.label_batch:val_label_batch_l})
                     val_writer.add_summary(val_summary, iter)
                     top5_cls_indxes = (np.argpartition(predictions[0,:], -3)[-3:])
                     print(top5_cls_indxes)

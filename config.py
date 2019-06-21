@@ -31,17 +31,17 @@ train_img_h = 512
 train_img_w = 512
 
 lr_rate = 0.001
-am_loss_weight = 10
+am_loss_weight = 1
 
 FLIP_RATE = 0.5
 
 per_gpu_size = int(batch_size/num_gpus)
 
-data_folder = r'C:\projects_yinhao\data\VOC2012\JPEGImages'
+data_folder = r'..\..\data\VOC2012\JPEGImages'
 
-exp_name = 'GAIN_classificaiton_only'
+exp_name = 'GAIN_weak_supervision'
 feature_extractor_scope = 'resnet_v1_50'
-feature_extractor_ckpt_path = r'C:\projects_yinhao\src\GAIN\resnet_50_v1_model\resnet_v1_50.ckpt'
+feature_extractor_ckpt_path = r'resnet_50_v1_model\resnet_v1_50.ckpt'
 print('loading:',[train_img_h, train_img_w])
 print('num_class: {}'.format(num_class))
 

@@ -59,15 +59,13 @@ def flip(img):
 
 
 def build_input_pipline(batch_size, img_path_list, label_list):
-    with tf.variable_scope('Input_Pipeline'):
+    ds_train = tf.data.Dataset.from_tensor_slices((img_path_list, label_list)).shuffle(6000)
+    ds_train = ds_train.map(parse_func, num_parallel_calls=12)
 
-        ds_train = tf.data.Dataset.from_tensor_slices((img_path_list, label_list)).shuffle(6000)
-        ds_train = ds_train.map(parse_func, num_parallel_calls=12)
+    ds_train = ds_train.repeat().batch(batch_size).prefetch(batch_size * 3) # add shuffling
+    iterator_train = ds_train.make_one_shot_iterator()
 
-        ds_train = ds_train.repeat().batch(batch_size).prefetch(batch_size * 3) # add shuffling
-        iterator_train = ds_train.make_one_shot_iterator()
-
-        return iterator_train.get_next()
+    return iterator_train.get_next()
 
 
 
