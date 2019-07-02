@@ -12,10 +12,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/old-licenses
 '''
 
 
-from config import *
 from network_utility import *
-import tensorflow as tf
-from resnet_v1 import *
+from resnet_v1_50.resnet_v1 import *
 
 def average_gradients(tower_grads):
     with tf.variable_scope('Average_Gradients'):
