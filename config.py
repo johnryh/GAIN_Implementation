@@ -30,7 +30,7 @@ num_class = 20
 train_img_h = 512
 train_img_w = 512
 
-lr_rate = 0.001
+lr_rate = 0.00001
 am_loss_weight = 1
 
 FLIP_RATE = 0.5

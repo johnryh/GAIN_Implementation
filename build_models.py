@@ -38,8 +38,8 @@ def average_gradients(tower_grads):
 def get_trainable_weights():
     var_list = []
     for v in tf.trainable_variables():
-        if 'block4' in v.name or 'logits' in v.name:
-            var_list.append(v)
+        #if 'block4' in v.name or 'logits' in v.name:
+        var_list.append(v)
 
     return var_list
 
@@ -102,7 +102,6 @@ class GAIN():
                     with tf.variable_scope('CAM'):
                         feature_gradients = []; importance_weights = []; attention_maps = []
 
-                        #fe = end_features['GAIN/resnet_v1_50/block4/unit_2/bottleneck_v1']
                         fe = end_features['GAIN/resnet_v1_50/block4/unit_2/bottleneck_v1']
 
                         with tf.variable_scope('Stack_CAMs'):
@@ -117,13 +116,14 @@ class GAIN():
 
                                 # compute attention maps by multiplying the importance weight of each feature map to itself
                                 attention_maps.append(importance_weights[-1]*feature_gradients[-1])
+
                                 #attention_maps.append(feature_gradients[-1])
 
                             attention_map_stack = tf.concat(attention_maps, axis=3)
                             CAM = tf.nn.relu(tf.reduce_sum(attention_map_stack, axis=3, keepdims=True))
                             tower_CAM.append(CAM)
 
-                            soft_mask = sigmoid_threshold(CAM, w=1, alpha=0.1)
+                            soft_mask = sigmoid_threshold(CAM, w=100, alpha=0.1)
                             soft_mask = tf.image.resize_images(soft_mask, [train_img_h, train_img_w], method=tf.image.ResizeMethod.BILINEAR)
                             masked_image = img_split[0] - tf.multiply(img_split[0], soft_mask)
 
@@ -131,7 +131,7 @@ class GAIN():
                         attention_mining_logits, _ = resnet_v1_50(inputs=masked_image, num_classes=num_class, is_training=True, scope=feature_extractor_scope, reuse=tf.AUTO_REUSE)
 
                     with tf.variable_scope('Loss/Attention_Mining_Loss'):
-                        tower_am_loss.append(am_loss_weight * tf.reduce_sum(tf.nn.sigmoid(attention_mining_logits)/num_class))
+                        tower_am_loss.append(am_loss_weight * tf.reduce_sum(tf.nn.sigmoid(attention_mining_logits))/num_class)
                     with tf.variable_scope('Loss'):
                         total_loss = tower_cls_loss[-1] + tower_am_loss[-1]
                         tower_grads.append(self.optimizer.compute_gradients(total_loss, var_list=get_trainable_weights()))
@@ -149,7 +149,9 @@ class GAIN():
             self.am_loss = tf.reduce_mean(tower_am_loss)
             self.total_loss = self.cls_loss + self.am_loss
             self.logits = tf.nn.sigmoid(tf.concat(tower_logits, axis=0))
+            #self.CAM = sigmoid_threshold(tf.concat(tower_CAM, axis=0), w=1, alpha=0.1)
             self.CAM = tf.concat(tower_CAM, axis=0)
+
 
             tf.summary.scalar('cls_loss loss', self.cls_loss)
             tf.summary.scalar('am_loss loss', self.am_loss)

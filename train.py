@@ -20,7 +20,7 @@ from tqdm import tqdm
 import numpy as np
 import os, time
 import matplotlib.pyplot as plt
-
+from scipy.misc import imresize
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 prev_phase_iter = 0
@@ -97,9 +97,17 @@ if __name__ == '__main__':
                     for i in range(3):
                         preds_str += '{}:{:.1f}    '.format(pred_class_names[i], 100*predictions[0][top5_cls_indxes[i]])
 
+                    dsip_img = val_img_l[0,:,:,:]
+                    dsip_cam = np.reshape(imresize(cam_l[0,:,:,0], [train_img_h, train_img_w]), [train_img_h, train_img_w])/50
+                    print(dsip_cam.shape)
                     plt.figure(1)
-                    plt.imshow(cam_l[0,:,:,0])
+                    plt.imshow(dsip_img)
                     plt.figure(2)
-                    plt.imshow(val_img_l[0,:,:,:])
+                    overlay = dsip_img[:,:, 0] + dsip_cam
+                    overlay = overlay / np.max(overlay) * 255
+                    print(overlay.shape)
+                    plt.imshow(overlay.astype(np.uint8))
+                    plt.figure(3)
+                    plt.imshow(dsip_cam)
                     plt.title(preds_str)
                     plt.pause(5)
