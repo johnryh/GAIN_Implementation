@@ -41,7 +41,7 @@ data_folder = r'..\..\data\VOC2012\JPEGImages'
 
 exp_name = 'GAIN_weak_supervision'
 feature_extractor_scope = 'resnet_v1_50'
-feature_extractor_ckpt_path = r'resnet_50_v1_model\resnet_v1_50.ckpt'
+feature_extractor_ckpt_path = r'resnet_v1_50\resnet_v1_50.ckpt'
 print('loading:',[train_img_h, train_img_w])
 print('num_class: {}'.format(num_class))
 

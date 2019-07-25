@@ -23,6 +23,7 @@ def sigmoid_threshold(feature, alpha, w):
     with tf.variable_scope('sigmoid_threshold'):
         return tf.nn.sigmoid(-w *(feature - alpha))
 
+
 def activation_func(z, activation='leaky_relu'):
     if activation == 'leaky_relu':
         return tf.nn.leaky_relu(z)

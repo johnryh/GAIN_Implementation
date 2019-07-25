@@ -38,6 +38,7 @@ def average_gradients(tower_grads):
             average_grads.append(grad_and_var)
         return average_grads
 
+
 def get_trainable_weights():
     var_list = []
     for v in tf.trainable_variables():
